@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">movieSs</string>
+    <string name="base_url">https://api.themoviedb.org/%s</string>
+    <string name="API_KEY">52a18783ed514602a5facb15a0177e61</string>
+</resources>
