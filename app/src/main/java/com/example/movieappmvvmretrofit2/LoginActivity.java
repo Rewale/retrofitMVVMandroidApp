@@ -12,11 +12,25 @@ import android.view.View;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
 
+import com.example.movieappmvvmretrofit2.body.GoogleLoginBody;
+import com.example.movieappmvvmretrofit2.models.MovieModel;
+import com.example.movieappmvvmretrofit2.request.Service;
+import com.example.movieappmvvmretrofit2.response.AccsesApiTokenResponse;
+import com.example.movieappmvvmretrofit2.viewModels.LoginViewModel;
+import com.example.movieappmvvmretrofit2.viewModels.MovieListViewModel;
 import com.google.android.gms.auth.GoogleAuthException;
 import com.google.android.gms.auth.GoogleAuthUtil;
 import com.google.android.gms.auth.UserRecoverableAuthException;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.AccountPicker;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.Task;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -24,116 +38,106 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import static com.example.movieappmvvmretrofit2.utlis.Credentials.SCOPES;
 import static com.example.movieappmvvmretrofit2.utlis.Credentials.TokenApi;
 
 public class LoginActivity extends AppCompatActivity {
 
-    private static final String TAG = "ErrorAuthGoogle";
+    private LoginViewModel loginViewModel;
+    String accountName;
+    private GoogleSignInClient mGoogleSignInClient;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-
+        loginViewModel = new ViewModelProvider(this).get(LoginViewModel.class);
         View btn = (View) findViewById(R.id.sign_in_button);
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = AccountPicker.newChooseAccountIntent(null, null, new String[]{"com.google"},
-                        false, null, null, null, null);
+                Intent intent = mGoogleSignInClient.getSignInIntent();
                 startActivityForResult(intent, 123);
             }
         });
+
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken("829308427010-nhn07sasokgsic2qbf45g7difk1cjndq.apps.googleusercontent.com")
+                .requestEmail()
+                .build();
+        mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
+
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+        if(account!=null)
+            Log.v(Service.tagForLogin,account.getEmail());
+
+        ObserverAnyChange();
     }
 
 
     protected void onActivityResult(final int requestCode, final int resultCode,
                                     final Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 123 && resultCode == RESULT_OK) {
-            final String accountName = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
-            AsyncTask<Void, Void, String[]> getToken = new AsyncTask<Void, Void, String[]>() {
-                @SuppressLint("StaticFieldLeak")
-                @Override
-                protected String[] doInBackground(Void... params) {
-                    try {
-                        String[] data =new String[]{GoogleAuthUtil.getToken(LoginActivity.this, accountName,
-                                SCOPES), accountName};
-                        return data;
+        if (requestCode == 123) {
+//            accountName = data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME);
+//
+//            loginViewModel.getLoginApiClient().tokenGoogle(LoginActivity.this, accountName);
 
-                    } catch (UserRecoverableAuthException userAuthEx) {
-                        startActivityForResult(userAuthEx.getIntent(), 123);
-                    } catch (IOException ioEx) {
-                        Log.d(TAG, "IOException");
-                    } catch (GoogleAuthException fatalAuthEx) {
-                        Log.d(TAG, "Fatal Authorization Exception" + fatalAuthEx.getLocalizedMessage());
-                    }
-                    return null;
-                }
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            handleSignInResult(task);
 
-                @Override
-                protected void onPostExecute(String[] data) {
-                    reg(data);
-                }
+        }
 
-            };
-            getToken.execute(null, null, null);
+    }
+    // TODO: стоило бы поместить в loginApiClient
+    private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
+        try {
+            GoogleSignInAccount account = completedTask.getResult(ApiException.class);
+
+            String token = account.getIdToken();
+            Log.d(Service.tagForLogin, token);
+            GoogleLoginBody body = new GoogleLoginBody(account.getEmail(), token );
+            loginViewModel.getLoginApiClient().loginApi(body);
+            // Signed in successfully, show authenticated UI.
+            //updateUI(account);
+        } catch (ApiException e) {
+            // The ApiException status code indicates the detailed failure reason.
+            // Please refer to the GoogleSignInStatusCodes class reference for more information.
+            Log.w(Service.tagForLogin, "signInResult:failed code=" + e.getStatusCode());
+            //updateUI(null);
         }
     }
 
-    private void reg(String[] data) {
-        AsyncTask<Void,Void, String> sendToken = new AsyncTask<Void, Void, String>() {
-            @RequiresApi(api = Build.VERSION_CODES.KITKAT)
+
+    // Observing any data change
+    private void ObserverAnyChange(){
+        loginViewModel.getLoginApiClient().getmToken().observe(this, new Observer<AccsesApiTokenResponse>() {
             @Override
-            protected String doInBackground(Void... voids) {
-                try {
-
-
-                    // debug //URL url = new URL("http://10.0.2.2:58905/api/Values?value="+sendX+":"+sendY);
-
-                    URL url = new URL("http://192.168.1.44:57792/api/v1/auth/google/");//relase
-                    URLConnection con = url.openConnection();
-                    con.setUseCaches(false);
-                    HttpURLConnection http = (HttpURLConnection) con;
-                    http.setRequestMethod("POST"); // PUT is another valid option
-
-                    String dataJson = "{ 'email':'"+data[1]+"','token':'"+data[0]+"'}";
-
-                    //http.setDoOutput(true);
-
-
-                    byte[] out = (dataJson).getBytes(StandardCharsets.UTF_8);
-                    int length = out.length;
-
-                    http.setFixedLengthStreamingMode(length);
-                    http.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
-                    http.connect();
-
-                    try(OutputStream os = http.getOutputStream()) {
-                        os.write(out);
-                    }
-
-                    String tokenDjango = http.getResponseMessage();
-
-                    http.disconnect();
-
-                    TokenApi = tokenDjango;
-
-                    Log.d(TAG, tokenDjango);
-
-                    return tokenDjango;
+            public void onChanged(AccsesApiTokenResponse accsesApiTokenResponse) {
+                // Слушатель изменений
+                if(accsesApiTokenResponse != null){
+                    Log.v(Service.tagForLogin, accsesApiTokenResponse.getAccessToken());
 
                 }
-                catch (Exception ex)
-                {
-                    ex.toString();
-                }
-                return null;
             }
-        };
 
-        sendToken.execute(null,null,null);
+
+        });
+
+        loginViewModel.getLoginApiClient().getmGoogleToken().observe(this, new Observer<String>() {
+            @Override
+            public void onChanged(String s) {
+                if(s != null) {
+                    GoogleLoginBody googleLoginBody = new GoogleLoginBody(accountName, s);
+                    googleLoginBody.email = accountName;
+                    googleLoginBody.token = s;
+                    loginViewModel.getLoginApiClient().loginApi(googleLoginBody);
+                }
+            }
+        });
     }
+
+
 }

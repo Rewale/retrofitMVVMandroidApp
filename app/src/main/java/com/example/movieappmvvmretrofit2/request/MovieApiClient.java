@@ -134,7 +134,8 @@ public class MovieApiClient {
         private Call<MovieSearchResponse> getMovies (String query, int pageNumber)
         {
             return Service.getMovieApi().searchMovie(
-                    Credentials.API_KEY,
+                    //Credentials.API_KEY,
+                    "123123",
                     query,
                     pageNumber);
         }

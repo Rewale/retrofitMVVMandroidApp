@@ -2,10 +2,10 @@ package com.example.movieappmvvmretrofit2.utlis;
 
 public class Credentials {
 
-    public static final String BASE_URL = "http://localhost:8000/";
+    public static final String BASE_URL = "http://10.0.2.2:8000/";
 
     //public static final String API_KEY = "52a18783ed514602a5facb15a0177e61";
-    //public static final String BASE_URL_IMAGE = "http://localhost:8000/media/";
+    public static final String BASE_URL_IMAGE = "http://10.0.2.2:8000/media/";
 
     // Для авторизации в гугл
 
@@ -15,7 +15,8 @@ public class Credentials {
             "https://www.googleapis.com/auth/userinfo.profile";
     private final static String EMAIL_SCOPE =
             "https://www.googleapis.com/auth/userinfo.email";
-    public final static String SCOPES = G_PLUS_SCOPE + " " + USERINFO_SCOPE + " " + EMAIL_SCOPE;
+    public final static String SCOPES = G_PLUS_SCOPE + " " + USERINFO_SCOPE;
+
 
     // Не
 
