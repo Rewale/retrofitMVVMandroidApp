@@ -8,6 +8,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
@@ -16,9 +19,11 @@ import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.movieappmvvmretrofit2.body.GoogleLoginBody;
+import com.example.movieappmvvmretrofit2.body.MailPasswordBody;
 import com.example.movieappmvvmretrofit2.models.MovieModel;
 import com.example.movieappmvvmretrofit2.request.Service;
 import com.example.movieappmvvmretrofit2.response.AccsesApiTokenResponse;
+import com.example.movieappmvvmretrofit2.response.ErrorMessageResponse;
 import com.example.movieappmvvmretrofit2.viewModels.LoginViewModel;
 import com.example.movieappmvvmretrofit2.viewModels.MovieListViewModel;
 import com.google.android.gms.auth.GoogleAuthException;
@@ -48,13 +53,14 @@ public class LoginActivity extends AppCompatActivity {
     private LoginViewModel loginViewModel;
     String accountName;
     private GoogleSignInClient mGoogleSignInClient;
-
+    EditText mail, password;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         loginViewModel = new ViewModelProvider(this).get(LoginViewModel.class);
         View btn = (View) findViewById(R.id.sign_in_button);
+        Button signInMailPass = findViewById(R.id.login);
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -63,8 +69,22 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
 
+        signInMailPass.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                mail = findViewById(R.id.username);
+                password = findViewById(R.id.password);
+                MailPasswordBody body = new MailPasswordBody();
+                body.email = mail.getText().toString();
+                body.password = password.getText().toString();
+
+                loginViewModel.getLoginApiClient().regMailPasswordApi(body);
+            }
+        });
+
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken("829308427010-nhn07sasokgsic2qbf45g7difk1cjndq.apps.googleusercontent.com")
+                .requestIdToken("829308427010-nhn07sasokgsic2qbf45g7difk1cjndq.apps.googleusercontent.com") // Хранить лучше в string.xml
                 .requestEmail()
                 .build();
         mGoogleSignInClient = GoogleSignIn.getClient(this, gso);
@@ -75,6 +95,7 @@ public class LoginActivity extends AppCompatActivity {
 
         ObserverAnyChange();
     }
+
 
 
     protected void onActivityResult(final int requestCode, final int resultCode,
@@ -119,7 +140,7 @@ public class LoginActivity extends AppCompatActivity {
                 // Слушатель изменений
                 if(accsesApiTokenResponse != null){
                     Log.v(Service.tagForLogin, accsesApiTokenResponse.getAccessToken());
-
+                    //TODO: Открытие общего окна - профиль, выбор рейсов с фильтором по аэропортам
                 }
             }
 
@@ -134,6 +155,22 @@ public class LoginActivity extends AppCompatActivity {
                     googleLoginBody.email = accountName;
                     googleLoginBody.token = s;
                     loginViewModel.getLoginApiClient().loginApi(googleLoginBody);
+                }
+            }
+        });
+
+        loginViewModel.getLoginApiClient().getmErrorMessage().observe(this, new Observer<String>() {
+            @Override
+            public void onChanged(String s) {
+                if(s!=null){
+                    if(s.equals("Для продолжения подтвердите учетную запись")) {
+                        Intent intent = new Intent(LoginActivity.this, MailAccept.class);
+                        intent.putExtra("mail", mail.getText().toString());
+                        startActivity(intent);
+                    }
+                    else{
+                        Toast.makeText(getApplicationContext(), s + "", Toast.LENGTH_LONG).show();
+                    }
                 }
             }
         });

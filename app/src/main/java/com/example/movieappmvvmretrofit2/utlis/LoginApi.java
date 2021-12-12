@@ -4,6 +4,7 @@ import com.example.movieappmvvmretrofit2.body.GoogleLoginBody;
 import com.example.movieappmvvmretrofit2.body.MailAcceptBody;
 import com.example.movieappmvvmretrofit2.body.MailPasswordBody;
 import com.example.movieappmvvmretrofit2.response.AccsesApiTokenResponse;
+import com.example.movieappmvvmretrofit2.response.ErrorMessageResponse;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
