@@ -3,6 +3,7 @@ package com.example.movieappmvvmretrofit2;
 import android.accounts.AccountManager;
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -50,6 +51,7 @@ import static com.example.movieappmvvmretrofit2.utlis.Credentials.TokenApi;
 
 public class LoginActivity extends AppCompatActivity {
 
+    private static final String SAVED_TOKEN = "TokenApi";
     private LoginViewModel loginViewModel;
     String accountName;
     private GoogleSignInClient mGoogleSignInClient;
@@ -131,6 +133,13 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+    private void RewriteToken(String token)
+    {
+        SharedPreferences sPref = getPreferences(MODE_PRIVATE);
+        SharedPreferences.Editor ed = sPref.edit();
+        ed.putString(SAVED_TOKEN, token);
+        ed.commit();
+    }
 
     // Observing any data change
     private void ObserverAnyChange(){
@@ -140,7 +149,11 @@ public class LoginActivity extends AppCompatActivity {
                 // Слушатель изменений
                 if(accsesApiTokenResponse != null){
                     Log.v(Service.tagForLogin, accsesApiTokenResponse.getAccessToken());
+                    RewriteToken(accsesApiTokenResponse.getAccessToken());
                     //TODO: Открытие общего окна - профиль, выбор рейсов с фильтором по аэропортам
+                    Intent intent = new Intent(LoginActivity.this, FlightsSearchActivity.class);
+                    //intent.putExtra("mail", mail.getText().toString());
+                    startActivity(intent);
                 }
             }
 

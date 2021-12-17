@@ -12,7 +12,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MovieAppmvvmretrofit2"
         android:usesCleartextTraffic="true">
-        <activity android:name=".MailAccept"></activity>
+        <activity android:name=".FlightsSearchActivity"></activity>
+        <activity android:name=".MailAccept" />
         <activity
             android:name=".LoginActivity"
             android:label="@string/title_activity_login">
@@ -23,7 +24,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".MovieDetails" />
-        <activity android:name=".MovieListActivity"></activity>
+        <activity android:name=".MovieListActivity" />
     </application>
 
 </manifest>

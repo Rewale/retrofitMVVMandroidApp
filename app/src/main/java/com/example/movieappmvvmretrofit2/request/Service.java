@@ -3,6 +3,7 @@ package com.example.movieappmvvmretrofit2.request;
 import com.example.movieappmvvmretrofit2.utlis.Credentials;
 import com.example.movieappmvvmretrofit2.utlis.LoginApi;
 import com.example.movieappmvvmretrofit2.utlis.MovieApi;
+import com.example.movieappmvvmretrofit2.utlis.TicketApi;
 
 import java.util.concurrent.TimeUnit;
 
@@ -25,6 +26,12 @@ public class Service {
     private static MovieApi movieApi = retrofit.create(MovieApi.class);
 
     private static LoginApi loginApi = retrofit.create(LoginApi.class);
+
+    public static TicketApi getTicketApi() {
+        return ticketApi;
+    }
+
+    private static TicketApi ticketApi = retrofit.create(TicketApi.class);
 
     public static MovieApi getMovieApi()
     {
